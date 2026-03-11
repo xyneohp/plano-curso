@@ -1,12 +1,1395 @@
-#!/bin/bash
-cd "$(dirname "$0")"
-PORT=${1:-8765}
-echo "================================"
-echo "  Plano de Curso - UFAC"
-echo "================================"
-echo ""
-echo "  Acesse: http://localhost:$PORT"
-echo ""
-echo "  Pressione Ctrl+C para parar"
-echo "================================"
-python3 http_server.py $PORT
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano de Curso – UFAC</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Merriweather:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #1a2e4a;
+    --blue: #2563a8;
+    --sky: #4a90d9;
+    --gold: #c8860a;
+    --gold-light: #f0c040;
+    --cream: #faf8f4;
+    --white: #ffffff;
+    --gray-100: #f4f4f6;
+    --gray-200: #e8e8ee;
+    --gray-400: #9898aa;
+    --gray-700: #444455;
+    --green: #1a7a4a;
+    --red: #c0392b;
+    --shadow: 0 4px 24px rgba(26,46,74,0.10);
+    --shadow-lg: 0 8px 40px rgba(26,46,74,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    background: var(--cream);
+    color: var(--gray-700);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, #1e3a5f 60%, #2a4f7a 100%);
+    color: white;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 14px 24px;
+  }
+  .header-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.25);
+    background: white;
+  }
+  .header-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .header-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+  }
+  .header-text p {
+    font-size: 12px;
+    opacity: 0.65;
+    font-weight: 300;
+    margin-top: 2px;
+  }
+  .header-badge {
+    margin-left: auto;
+    background: rgba(200,134,10,0.25);
+    border: 1px solid var(--gold);
+    color: var(--gold-light);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-bar {
+    background: rgba(255,255,255,0.08);
+    height: 3px;
+    width: 100%;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  /* ── LAYOUT ── */
+  .app-layout {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── SIDEBAR NAV ── */
+  .sidebar {
+    position: sticky;
+    top: 88px;
+  }
+  .nav-steps {
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+  }
+  .nav-steps-title {
+    background: var(--navy);
+    color: white;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .nav-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 13px;
+    color: var(--gray-700);
+    text-decoration: none;
+  }
+  .nav-step:last-child { border-bottom: none; }
+  .nav-step:hover { background: var(--gray-100); color: var(--blue); }
+  .nav-step.active { background: #e8f0fb; color: var(--blue); font-weight: 700; }
+  .step-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gray-200);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .nav-step.active .step-dot { background: var(--blue); }
+  .step-num {
+    font-size: 10px;
+    color: var(--gray-400);
+    font-weight: 700;
+    min-width: 16px;
+  }
+
+  /* ── FORM SECTIONS ── */
+  .form-main { display: flex; flex-direction: column; gap: 20px; }
+
+  .form-section {
+    background: white;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    scroll-margin-top: 100px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 22px;
+    background: linear-gradient(135deg, var(--navy), #2a4468);
+    color: white;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header:hover { background: linear-gradient(135deg, #1e3560, #2d4a70); }
+  .section-icon {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    flex: 1;
+  }
+  .section-subtitle {
+    font-size: 11px;
+    opacity: 0.6;
+    font-weight: 300;
+    margin-top: 1px;
+  }
+  .section-toggle {
+    font-size: 18px;
+    opacity: 0.6;
+    transition: transform 0.3s;
+  }
+  .section-toggle.open { transform: rotate(180deg); }
+  .section-body {
+    padding: 22px;
+    display: grid;
+    gap: 16px;
+  }
+  .section-body.hidden { display: none; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .col-span-2 { grid-column: 1 / -1; }
+
+  /* ── FORM FIELDS ── */
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  label .required { color: var(--red); margin-left: 2px; }
+  label .hint { font-weight: 300; color: var(--gray-400); text-transform: none; letter-spacing: 0; margin-left: 4px; font-size: 11px; }
+
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    font-family: 'Lato', sans-serif;
+    font-size: 14px;
+    color: var(--gray-700);
+    background: var(--gray-100);
+    transition: all 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--sky);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(74,144,217,0.12);
+  }
+  input.auto-filled, select.auto-filled, textarea.auto-filled {
+    border-color: #a0d4a0;
+    background: #f0faf0;
+  }
+  textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+  textarea.tall { min-height: 130px; }
+  select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M1 4l5 5 5-5' stroke='%239898aa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+  /* ── DYNAMIC ROWS ── */
+  .dynamic-list { display: flex; flex-direction: column; gap: 12px; }
+  .dynamic-item {
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 14px;
+    background: var(--gray-100);
+    position: relative;
+  }
+  .dynamic-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .dynamic-item-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .btn-remove {
+    background: none;
+    border: none;
+    color: var(--red);
+    cursor: pointer;
+    font-size: 18px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    padding: 0 4px;
+  }
+  .btn-remove:hover { opacity: 1; }
+  .btn-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: 2px dashed var(--gray-400);
+    border-radius: 8px;
+    background: none;
+    color: var(--gray-400);
+    font-family: 'Lato', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .btn-add:hover { border-color: var(--blue); color: var(--blue); background: #e8f0fb; }
+
+  /* ── AVALIAÇÕES GRID ── */
+  .aval-item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+  .aval-item-date { width: 130px; }
+
+  /* ── ACTIONS ── */
+  .form-actions {
+    background: white;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--gray-200);
+    padding: 22px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .btn-generate {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: linear-gradient(135deg, var(--blue), var(--sky));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Lato', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(37,99,168,0.35);
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(37,99,168,0.45);
+  }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn-clear {
+    padding: 12px 22px;
+    background: white;
+    color: var(--gray-700);
+    border: 2px solid var(--gray-200);
+    border-radius: 10px;
+    font-family: 'Lato', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-clear:hover { border-color: var(--gray-400); }
+  .actions-note {
+    font-size: 12px;
+    color: var(--gray-400);
+    font-style: italic;
+    margin-left: auto;
+  }
+
+  /* ── STATUS MESSAGES ── */
+  .status-msg {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    display: none;
+  }
+  .status-msg.show { display: flex; align-items: center; gap: 8px; }
+  .status-msg.loading { background: #e8f0fb; color: var(--blue); border: 1px solid #c0d8f0; }
+  .status-msg.success { background: #e8f8ee; color: var(--green); border: 1px solid #a0d8b0; }
+  .status-msg.error { background: #fde8e6; color: var(--red); border: 1px solid #f0b8b0; }
+
+  /* ── LOADING SPINNER ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(37,99,168,0.2);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* ── AUTO-FILL NOTICE ── */
+  .autofill-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: #166534;
+    margin-top: -4px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .app-layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .col-span-2 { grid-column: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-logo"><img src="logo.png" alt="UFAC" onerror="this.parentElement.textContent='U'"></div>
+    <div class="header-text">
+      <h1>Plano de Curso – UFAC</h1>
+      <p>Pró-Reitoria de Graduação · Bacharelado em Nutrição</p>
+    </div>
+    <div class="header-badge">Formulário</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</header>
+
+<div class="app-layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-steps">
+      <div class="nav-steps-title">Seções</div>
+      <a class="nav-step active" href="#sec-identificacao" onclick="navScrollTo(event,'sec-identificacao')">
+        <span class="step-num">1</span><span class="step-dot"></span>Identificação
+      </a>
+      <a class="nav-step" href="#sec-ementa" onclick="navScrollTo(event,'sec-ementa')">
+        <span class="step-num">2</span><span class="step-dot"></span>Ementa
+      </a>
+      <a class="nav-step" href="#sec-objetivos" onclick="navScrollTo(event,'sec-objetivos')">
+        <span class="step-num">3</span><span class="step-dot"></span>Objetivos
+      </a>
+      <a class="nav-step" href="#sec-conteudos" onclick="navScrollTo(event,'sec-conteudos')">
+        <span class="step-num">4</span><span class="step-dot"></span>Conteúdos
+      </a>
+      <a class="nav-step" href="#sec-metodologia" onclick="navScrollTo(event,'sec-metodologia')">
+        <span class="step-num">5</span><span class="step-dot"></span>Metodologia
+      </a>
+      <a class="nav-step" href="#sec-avaliacao" onclick="navScrollTo(event,'sec-avaliacao')">
+        <span class="step-num">6</span><span class="step-dot"></span>Avaliação
+      </a>
+      <a class="nav-step" href="#sec-bibliografia" onclick="navScrollTo(event,'sec-bibliografia')">
+        <span class="step-num">7</span><span class="step-dot"></span>Bibliografia
+      </a>
+      <a class="nav-step" href="#sec-cronograma" onclick="navScrollTo(event,'sec-cronograma')">
+        <span class="step-num">8</span><span class="step-dot"></span>Cronograma
+      </a>
+      <a class="nav-step" href="#sec-final" onclick="navScrollTo(event,'sec-final')">
+        <span class="step-num">9</span><span class="step-dot"></span>Aprovação
+      </a>
+    </div>
+  </nav>
+
+  <!-- MAIN FORM -->
+  <main class="form-main">
+
+    <!-- ── 1. IDENTIFICAÇÃO ── -->
+    <section class="form-section" id="sec-identificacao">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">🏛️</div>
+        <div>
+          <div class="section-title">1 – Identificação da Disciplina</div>
+          <div class="section-subtitle">Centro, Curso, Disciplina e informações básicas</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body grid-2">
+        <div class="field">
+          <label>Centro Acadêmico <span class="required">*</span></label>
+          <input type="text" id="centro" placeholder="Ex.: Centro de Ciências da Saúde e do Desporto" required>
+        </div>
+        <div class="field">
+          <label>Curso <span class="required">*</span></label>
+          <input type="text" id="curso" placeholder="Ex.: Bacharelado em Nutrição" required>
+        </div>
+        <div class="field">
+          <label>Período <span class="required">*</span></label>
+          <select id="periodo" onchange="filterDisciplinas()">
+            <option value="">— Selecione o período —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Disciplina <span class="required">*</span></label>
+          <select id="disciplina" onchange="onDisciplinaChange()">
+            <option value="">— Selecione a disciplina —</option>
+          </select>
+        </div>
+        <div id="autofill-notice" class="autofill-notice col-span-2" style="display:none">
+          ✅ Campos preenchidos automaticamente com base na disciplina selecionada
+        </div>
+        <div class="field">
+          <label>Código <span class="hint">(auto)</span></label>
+          <input type="text" id="codigo" readonly placeholder="Automático">
+        </div>
+        <div class="field">
+          <label>Créditos <span class="hint">(auto)</span></label>
+          <input type="number" id="creditos" placeholder="Ex.: 4">
+        </div>
+        <div class="field">
+          <label>Carga Horária (h) <span class="hint">(auto)</span></label>
+          <input type="number" id="ch" placeholder="Ex.: 60">
+        </div>
+        <div class="field">
+          <label>Encontros <span class="hint">(auto)</span></label>
+          <input type="number" id="encontros" placeholder="Ex.: 36">
+        </div>
+        <div class="field">
+          <label>CH de Extensão (Acex)</label>
+          <input type="number" id="acex" placeholder="0 se não houver">
+        </div>
+        <div class="field">
+          <label>Semestre Letivo/Ano <span class="required">*</span></label>
+          <input type="text" id="semestre" placeholder="Ex.: 1º Semestre/2026">
+        </div>
+        <div class="field col-span-2">
+          <label>Pré-requisitos</label>
+          <input type="text" id="prerequisitos" placeholder="Informar se houver, ou deixe em branco">
+        </div>
+        <div class="field col-span-2">
+          <label>Co-requisitos</label>
+          <input type="text" id="corequisitos" placeholder="Informar se houver, ou deixe em branco">
+        </div>
+        <div class="field col-span-2">
+          <label>Dias e Horários de Aula <span class="required">*</span></label>
+          <input type="text" id="dias_horarios" placeholder="Ex.: Segunda e Quarta, das 14h às 16h">
+        </div>
+        <div class="field col-span-2">
+          <label>Professor(a) <span class="required">*</span></label>
+          <input type="text" id="professor" placeholder="Título e nome completo do(a) professor(a)">
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 2. EMENTA ── -->
+    <section class="form-section" id="sec-ementa">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">📋</div>
+        <div>
+          <div class="section-title">I – Ementa</div>
+          <div class="section-subtitle">Transcrita literalmente do PPC vigente</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Ementa <span class="required">*</span> <span class="hint">(auto a partir da disciplina)</span></label>
+          <textarea id="ementa" class="tall" placeholder="Transcrever literalmente a ementa da disciplina conforme a versão vigente do PPC do Curso."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 3. OBJETIVOS ── -->
+    <section class="form-section" id="sec-objetivos">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">🎯</div>
+        <div>
+          <div class="section-title">II – Objetivos de Ensino</div>
+          <div class="section-subtitle">Gerais e específicos da disciplina</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Objetivos Gerais <span class="required">*</span></label>
+          <textarea class="tall" id="obj_gerais" placeholder="Definir os objetivos gerais da disciplina."></textarea>
+        </div>
+        <div class="field">
+          <label>Objetivos Específicos <span class="required">*</span></label>
+          <textarea class="tall" id="obj_especificos" placeholder="Definir os objetivos específicos."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 4. CONTEÚDOS ── -->
+    <section class="form-section" id="sec-conteudos">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">📚</div>
+        <div>
+          <div class="section-title">III – Conteúdos de Ensino</div>
+          <div class="section-subtitle">Unidades temáticas com subtemas e carga horária</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="dynamic-list" id="unidades-list"></div>
+        <button class="btn-add" onclick="addUnidade()">＋ Adicionar Unidade Temática</button>
+      </div>
+    </section>
+
+    <!-- ── 5. METODOLOGIA ── -->
+    <section class="form-section" id="sec-metodologia">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">⚙️</div>
+        <div>
+          <div class="section-title">IV – Metodologia de Ensino</div>
+          <div class="section-subtitle">Métodos e técnicas de ensino utilizados</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Metodologia <span class="required">*</span></label>
+          <textarea class="tall" id="metodologia" placeholder="Descrever os métodos e técnicas de ensino."></textarea>
+        </div>
+        <div class="field">
+          <label>V – Recursos Didáticos</label>
+          <textarea id="recursos" placeholder="Ex.: Projetor multimídia, quadro branco, laboratório..."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 6. AVALIAÇÃO ── -->
+    <section class="form-section" id="sec-avaliacao">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">📝</div>
+        <div>
+          <div class="section-title">VI – Avaliação da Aprendizagem</div>
+          <div class="section-subtitle">Modalidade, critérios e instrumentos</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Descrição da Avaliação <span class="required">*</span></label>
+          <textarea class="tall" id="avaliacao" placeholder="Descrever o processo de avaliação..."></textarea>
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:12px">Avaliações Programadas <span class="hint">(datas do cronograma)</span></label>
+          <div class="dynamic-list" id="avaliacoes-list"></div>
+          <button class="btn-add" onclick="addAvaliacao()">＋ Adicionar Avaliação</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 7. BIBLIOGRAFIA ── -->
+    <section class="form-section" id="sec-bibliografia">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">📖</div>
+        <div>
+          <div class="section-title">VII – Bibliografia</div>
+          <div class="section-subtitle">Básica, complementar e sugerida (normas ABNT)</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>1 – Bibliografia Básica <span class="required">*</span> <span class="hint">(auto)</span></label>
+          <textarea class="tall" id="biblio_basica" placeholder="Indicar no mínimo 3 livros (normas ABNT). Um por linha."></textarea>
+        </div>
+        <div class="field">
+          <label>2 – Bibliografia Complementar</label>
+          <textarea class="tall" id="biblio_complementar" placeholder="Indicar livros complementares (normas ABNT). Um por linha."></textarea>
+        </div>
+        <div class="field">
+          <label>3 – Bibliografia Sugerida</label>
+          <textarea id="biblio_sugerida" placeholder="Indicar livros e artigos sugeridos (normas ABNT). Um por linha."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 8. CRONOGRAMA ── -->
+    <section class="form-section" id="sec-cronograma">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">📅</div>
+        <div>
+          <div class="section-title">VIII – Cronograma</div>
+          <div class="section-subtitle">Período, datas de início e término por unidade</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>Período de Realização da Disciplina <span class="required">*</span></label>
+          <input type="text" id="periodo_realiz" placeholder="Ex.: 01/03/2026 a 30/06/2026">
+        </div>
+        <p style="font-size:12px;color:var(--gray-400);margin-top:-4px">
+          ℹ️ As datas de início/término por unidade são preenchidas nas Unidades Temáticas (seção 4)
+        </p>
+      </div>
+    </section>
+
+    <!-- ── 9. APROVAÇÃO ── -->
+    <section class="form-section" id="sec-final">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-icon">✅</div>
+        <div>
+          <div class="section-title">Aprovação e Assinatura</div>
+          <div class="section-subtitle">Aprovação do Colegiado e dados finais</div>
+        </div>
+        <div class="section-toggle open">▾</div>
+      </div>
+      <div class="section-body grid-2">
+        <div class="field col-span-2">
+          <label>Aprovação do Colegiado de Curso</label>
+          <textarea id="aprovacao" placeholder="Ex.: Plano de Curso elaborado nos termos do §2º, Art. 243 do Regimento Geral da Ufac..."></textarea>
+        </div>
+        <div class="field">
+          <label>Local e Data <span class="required">*</span></label>
+          <input type="text" id="local_data" placeholder="Ex.: Rio Branco/AC, 09 de março de 2026">
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ACTIONS ── -->
+    <div class="form-actions" id="form-actions">
+      <button class="btn-generate" id="btn-generate" onclick="generateDocx()">
+        <span>⬇</span> Gerar Plano de Curso (.docx)
+      </button>
+      <button class="btn-clear" onclick="clearForm()">🗑 Limpar Formulário</button>
+      <div id="status-msg" class="status-msg"></div>
+      <div class="actions-note">Arquivo Word compatível com Microsoft Word e LibreOffice</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── DATA ──
+let DISCIPLINAS = [];
+let unidadeCount = 0;
+let avaliacaoCount = 0;
+
+const DEFAULT_AVALIACOES = [
+  'Avaliação 1 – N1',
+  'Avaliação 2 – N1',
+  'Avaliação 1 – N2',
+  'Avaliação 2 – N2',
+  'Realização da Prova Final',
+];
+
+// ── INIT ──
+async function init() {
+  try {
+    const res = await fetch('disciplinas.json');
+    DISCIPLINAS = await res.json();
+    populatePeriodos();
+  } catch(e) {
+    console.error('Failed to load disciplinas.json:', e);
+  }
+  addUnidade(); addUnidade(); addUnidade();
+  DEFAULT_AVALIACOES.forEach(desc => addAvaliacao(desc));
+  updateProgress();
+}
+
+function populatePeriodos() {
+  const sel = document.getElementById('periodo');
+  const seen = new Set();
+  DISCIPLINAS.forEach(d => {
+    const p = String(d.periodo);
+    if (!seen.has(p)) {
+      seen.add(p);
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p === 'Optativa' ? 'Optativa' : `${p}º Período`;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+function filterDisciplinas() {
+  const periodo = document.getElementById('periodo').value;
+  const sel = document.getElementById('disciplina');
+  sel.innerHTML = '<option value="">— Selecione a disciplina —</option>';
+  const filtered = periodo ? DISCIPLINAS.filter(d => String(d.periodo) === periodo) : DISCIPLINAS;
+  filtered.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.codigo;
+    opt.textContent = d.disc_cod || `${d.disciplina} (${d.codigo})`;
+    sel.appendChild(opt);
+  });
+  clearAutoFields();
+  updateProgress();
+}
+
+function onDisciplinaChange() {
+  const codigo = document.getElementById('disciplina').value;
+  if (!codigo) { clearAutoFields(); return; }
+  const disc = DISCIPLINAS.find(d => d.codigo === codigo);
+  if (!disc) return;
+  setAutoField('codigo', disc.codigo);
+  setAutoField('ch', disc.ch);
+  setAutoField('encontros', disc.encontros);
+  setAutoField('acex', disc.acex || 0);
+  setAutoField('ementa', disc.ementa);
+  setAutoField('biblio_basica', disc.biblio);
+  setAutoField('creditos', Math.round(disc.ch / 15));
+  document.getElementById('autofill-notice').style.display = 'flex';
+  updateProgress();
+}
+
+function setAutoField(id, value) {
+  const el = document.getElementById(id);
+  if (el) { el.value = value || ''; el.classList.add('auto-filled'); }
+}
+
+function clearAutoFields() {
+  ['codigo','ch','encontros','acex','creditos','ementa','biblio_basica'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.classList.remove('auto-filled'); }
+  });
+  document.getElementById('autofill-notice').style.display = 'none';
+}
+
+// ── UNIDADES ──
+function addUnidade(titulo='', subtemas='', ch='', inicio='', termino='') {
+  unidadeCount++;
+  const n = unidadeCount;
+  const container = document.getElementById('unidades-list');
+  const div = document.createElement('div');
+  div.className = 'dynamic-item';
+  div.id = `unidade-${n}`;
+  div.innerHTML = `
+    <div class="dynamic-item-header">
+      <span class="dynamic-item-label">Unidade ${n}</span>
+      <button class="btn-remove" onclick="removeItem('unidade-${n}')" title="Remover">×</button>
+    </div>
+    <div style="display:grid;gap:10px">
+      <div class="field">
+        <label>Título da Unidade</label>
+        <input type="text" class="u-titulo" placeholder="Ex.: Introdução à Nutrição" value="${escHtml(titulo)}">
+      </div>
+      <div class="field">
+        <label>Subtemas <span class="hint">(um por linha)</span></label>
+        <textarea class="u-subtemas" placeholder="Subtema 1&#10;Subtema 2&#10;Subtema 3">${escHtml(subtemas)}</textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="field">
+          <label>Carga Horária</label>
+          <input type="text" class="u-ch" placeholder="Ex.: 20h" value="${escHtml(ch)}">
+        </div>
+        <div class="field">
+          <label>Início</label>
+          <input type="text" class="u-inicio" placeholder="dd/mm/aaaa" value="${escHtml(inicio)}">
+        </div>
+        <div class="field">
+          <label>Término</label>
+          <input type="text" class="u-termino" placeholder="dd/mm/aaaa" value="${escHtml(termino)}">
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  renumberItems('unidades-list', 'Unidade');
+}
+
+function renumberItems(listId, label) {
+  document.querySelectorAll(`#${listId} .dynamic-item`).forEach((item, i) => {
+    const lbl = item.querySelector('.dynamic-item-label');
+    if (lbl) lbl.textContent = `${label} ${i + 1}`;
+  });
+}
+
+// ── AVALIAÇÕES ──
+function addAvaliacao(desc='', data='') {
+  avaliacaoCount++;
+  const n = avaliacaoCount;
+  const container = document.getElementById('avaliacoes-list');
+  const div = document.createElement('div');
+  div.className = 'dynamic-item';
+  div.id = `aval-${n}`;
+  div.innerHTML = `
+    <div class="dynamic-item-header">
+      <span class="dynamic-item-label">Avaliação ${n}</span>
+      <button class="btn-remove" onclick="removeItem('aval-${n}')" title="Remover">×</button>
+    </div>
+    <div class="aval-item">
+      <div class="field">
+        <label>Descrição</label>
+        <input type="text" class="av-desc" placeholder="Ex.: Avaliação 1 – N1 (Prova escrita)" value="${escHtml(desc)}">
+      </div>
+      <div class="field aval-item-date">
+        <label>Data</label>
+        <input type="text" class="av-data" placeholder="dd/mm/aaaa" value="${escHtml(data)}">
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  renumberItems('avaliacoes-list', 'Avaliação');
+}
+
+function removeItem(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+// ── SECTION TOGGLE ──
+function toggleSection(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.section-toggle');
+  body.classList.toggle('hidden');
+  toggle.classList.toggle('open');
+}
+
+function navScrollTo(e, id) {
+  e.preventDefault();
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+window.addEventListener('scroll', () => {
+  const sections = document.querySelectorAll('.form-section');
+  const navLinks = document.querySelectorAll('.nav-step');
+  let current = '';
+  sections.forEach(sec => {
+    if (sec.getBoundingClientRect().top < 140) current = sec.id;
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === `#${current}`);
+  });
+});
+
+// ── PROGRESS ──
+function updateProgress() {
+  const fields = ['centro','curso','disciplina','semestre','professor','ementa','obj_gerais','obj_especificos','metodologia','avaliacao','biblio_basica','periodo_realiz'];
+  const filled = fields.filter(id => { const el = document.getElementById(id); return el && el.value.trim().length > 0; }).length;
+  document.getElementById('progressFill').style.width = Math.round((filled / fields.length) * 100) + '%';
+}
+document.addEventListener('input', updateProgress);
+
+// ── COLLECT DATA ──
+function collectData() {
+  const codigo = document.getElementById('disciplina').value;
+  const discObj = DISCIPLINAS.find(d => d.codigo === codigo);
+  const unidades = [];
+  document.querySelectorAll('#unidades-list .dynamic-item').forEach(item => {
+    unidades.push({
+      titulo: item.querySelector('.u-titulo')?.value || '',
+      subtemas: item.querySelector('.u-subtemas')?.value || '',
+      ch: item.querySelector('.u-ch')?.value || '',
+      inicio: item.querySelector('.u-inicio')?.value || '',
+      termino: item.querySelector('.u-termino')?.value || '',
+    });
+  });
+  const avaliacoes = [];
+  document.querySelectorAll('#avaliacoes-list .dynamic-item').forEach(item => {
+    avaliacoes.push({
+      desc: item.querySelector('.av-desc')?.value || '',
+      data: item.querySelector('.av-data')?.value || '',
+    });
+  });
+  return {
+    centro: v('centro'), curso: v('curso'),
+    disciplina: discObj?.disciplina || v('disciplina'),
+    disciplina_cod: discObj?.disc_cod || v('disciplina'),
+    codigo: v('codigo'), creditos: v('creditos'),
+    ch: v('ch'), encontros: v('encontros'), acex: v('acex'),
+    semestre: v('semestre'),
+    prerequisitos: v('prerequisitos') || 'Não há',
+    corequisitos: v('corequisitos') || 'Não há',
+    dias_horarios: v('dias_horarios'), professor: v('professor'),
+    ementa: v('ementa'), obj_gerais: v('obj_gerais'), obj_especificos: v('obj_especificos'),
+    unidades, metodologia: v('metodologia'), recursos: v('recursos'),
+    avaliacao: v('avaliacao'), avaliacoes,
+    biblio_basica: v('biblio_basica'), biblio_complementar: v('biblio_complementar'), biblio_sugerida: v('biblio_sugerida'),
+    periodo_realiz: v('periodo_realiz'), aprovacao: v('aprovacao'), local_data: v('local_data'),
+  };
+}
+function v(id) { return document.getElementById(id)?.value?.trim() || ''; }
+
+// ── DOCX GENERATION (client-side via docx.js) ──
+async function generateDocx() {
+  const data = collectData();
+
+  const required = { centro: 'Centro Acadêmico', curso: 'Curso', semestre: 'Semestre Letivo/Ano', professor: 'Professor(a)', ementa: 'Ementa' };
+  for (const [key, label] of Object.entries(required)) {
+    if (!data[key]) {
+      showStatus('error', `⚠️ Campo obrigatório: ${label}`);
+      document.getElementById(key)?.focus();
+      return;
+    }
+  }
+
+  const btn = document.getElementById('btn-generate');
+  btn.disabled = true;
+  showStatus('loading', 'Gerando documento...');
+
+  try {
+    const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle,
+            AlignmentType, ShadingType, VerticalAlign, HeadingLevel, Packer } = docx;
+
+    const PT = (n) => n * 20; // twips from pt
+    const COL1 = 8400, COL2 = 2400;
+
+    const BORDER = {
+      top: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+      bottom: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+      left: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+      right: { style: BorderStyle.SINGLE, size: 4, color: '000000' },
+    };
+
+    const SHADING_HEADER = { fill: 'D0D8E8', type: ShadingType.CLEAR, color: 'auto' };
+    const SHADING_SUB    = { fill: 'F0F0F0', type: ShadingType.CLEAR, color: 'auto' };
+
+    function cellFull(text, opts = {}) {
+      const { bold = false, shading = null, align = AlignmentType.LEFT, size = 20 } = opts;
+      return new TableCell({
+        columnSpan: opts.span || 1,
+        shading: shading || undefined,
+        borders: BORDER,
+        width: { size: opts.width || COL1 + COL2, type: WidthType.DXA },
+        children: [
+          new Paragraph({
+            alignment: align,
+            spacing: { before: 40, after: 40 },
+            children: [new TextRun({ text: text || '', bold, font: 'Arial', size })],
+          }),
+        ],
+      });
+    }
+
+    function cellBoldNormal(boldText, normalText, opts = {}) {
+      const { shading = null, align = AlignmentType.LEFT, width } = opts;
+      return new TableCell({
+        columnSpan: opts.span || 1,
+        shading: shading || undefined,
+        borders: BORDER,
+        width: width ? { size: width, type: WidthType.DXA } : undefined,
+        children: [
+          new Paragraph({
+            alignment: align,
+            spacing: { before: 40, after: 40 },
+            children: [
+              new TextRun({ text: boldText || '', bold: true, font: 'Arial', size: 20 }),
+              new TextRun({ text: normalText || '', bold: false, font: 'Arial', size: 20 }),
+            ],
+          }),
+        ],
+      });
+    }
+
+    function cellMultiline(text, opts = {}) {
+      const lines = (text || '').split('\n');
+      return new TableCell({
+        columnSpan: opts.span || 1,
+        shading: opts.shading || undefined,
+        borders: BORDER,
+        width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
+        children: lines.length ? lines.map(line =>
+          new Paragraph({
+            spacing: { before: 20, after: 20 },
+            children: [new TextRun({ text: line || '', font: 'Arial', size: 20 })],
+          })
+        ) : [new Paragraph({ children: [new TextRun({ text: '', font: 'Arial', size: 20 })] })],
+      });
+    }
+
+    function sectionHeaderRow(title) {
+      return new TableRow({
+        children: [cellFull(title, { bold: true, shading: SHADING_HEADER, span: 2 })],
+      });
+    }
+
+    // Build unidades rows
+    const unidades = data.unidades.length ? data.unidades : [{ titulo: '', subtemas: '', ch: '', inicio: '', termino: '' }];
+
+    const unidadeRows = unidades.map((u, i) => {
+      const subtemaLines = (u.subtemas || '').split('\n').filter(l => l.trim());
+      const children = [
+        new Paragraph({
+          spacing: { before: 40, after: 20 },
+          children: [
+            new TextRun({ text: `Unidade ${i+1} – `, bold: true, font: 'Arial', size: 20 }),
+            new TextRun({ text: u.titulo || '', bold: false, font: 'Arial', size: 20 }),
+          ],
+        }),
+        ...subtemaLines.map(line => new Paragraph({
+          spacing: { before: 0, after: 0 },
+          children: [new TextRun({ text: `  • ${line.trim()}`, font: 'Arial', size: 20 })],
+        })),
+      ];
+      return new TableRow({
+        children: [
+          new TableCell({ borders: BORDER, width: { size: COL1, type: WidthType.DXA }, children }),
+          new TableCell({
+            borders: BORDER,
+            width: { size: COL2, type: WidthType.DXA },
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 40, after: 40 },
+              children: [new TextRun({ text: u.ch || '', font: 'Arial', size: 20 })],
+            })],
+          }),
+        ],
+      });
+    });
+
+    // Cronograma unidade rows
+    const cronUnidadeRows = unidades.map((u, i) =>
+      new TableRow({
+        children: [
+          cellBoldNormal(`Unidade ${i+1}: `, u.titulo || '', { width: COL1 }),
+          new TableCell({
+            borders: BORDER,
+            width: { size: COL2, type: WidthType.DXA },
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 40, after: 40 },
+              children: [new TextRun({
+                text: `${u.inicio || '....../......'}   /   ${u.termino || '....../......'}`,
+                font: 'Arial', size: 20,
+              })],
+            })],
+          }),
+        ],
+      })
+    );
+
+    // Avaliações rows
+    const avaliacoes = data.avaliacoes.length ? data.avaliacoes : [
+      { desc: 'Avaliação 1 – N1', data: '' },
+      { desc: 'Avaliação 2 – N1', data: '' },
+      { desc: 'Avaliação 1 – N2', data: '' },
+      { desc: 'Avaliação 2 – N2', data: '' },
+      { desc: 'Realização da Prova Final', data: '' },
+    ];
+
+    const avaliacaoRows = avaliacoes.map(a =>
+      new TableRow({
+        children: [
+          cellFull(a.desc || '', { width: COL1 }),
+          new TableCell({
+            borders: BORDER,
+            width: { size: COL2, type: WidthType.DXA },
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 40, after: 40 },
+              children: [new TextRun({ text: a.data || '', font: 'Arial', size: 20 })],
+            })],
+          }),
+        ],
+      })
+    );
+
+    const acexVal = parseInt(data.acex) || 0;
+    const acexStr = acexVal > 0 ? `${acexVal}h` : 'Não há';
+    const chText = `Carga Horária: ${data.ch}h    |    CH de Acex: ${acexStr}    |    Encontros: ${data.encontros}`;
+
+    const table = new Table({
+      width: { size: COL1 + COL2, type: WidthType.DXA },
+      rows: [
+        // Header
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              borders: BORDER,
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 60, after: 20 },
+                  children: [
+                    new TextRun({ text: 'UNIVERSIDADE FEDERAL DO ACRE', bold: true, font: 'Arial', size: 24 }),
+                  ],
+                }),
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 0, after: 60 },
+                  children: [new TextRun({ text: 'PRÓ-REITORIA DE GRADUAÇÃO', bold: true, font: 'Arial', size: 22 })],
+                }),
+              ],
+            }),
+          ],
+        }),
+        // PLANO DE CURSO title
+        new TableRow({
+          children: [cellFull('PLANO DE CURSO', { bold: true, shading: SHADING_HEADER, span: 2, align: AlignmentType.CENTER, size: 24 })],
+        }),
+        // Centro
+        new TableRow({ children: [cellBoldNormal('Centro: ', data.centro, { span: 2 })] }),
+        // Curso
+        new TableRow({ children: [cellBoldNormal('Curso: ', data.curso, { span: 2 })] }),
+        // Disciplina + Créditos
+        new TableRow({
+          children: [
+            cellBoldNormal('Disciplina: ', data.disciplina_cod, { width: COL1 }),
+            cellBoldNormal('Créditos: ', data.creditos, { width: COL2 }),
+          ],
+        }),
+        // Pré-requisitos + Co-requisitos
+        new TableRow({
+          children: [
+            cellBoldNormal('Pré-requisitos: ', data.prerequisitos, { width: COL1 }),
+            cellBoldNormal('Co-requisitos: ', data.corequisitos, { width: COL2 }),
+          ],
+        }),
+        // CH + Período
+        new TableRow({
+          children: [
+            cellBoldNormal('', chText, { width: COL1 }),
+            cellBoldNormal('Período: ', data.semestre, { width: COL2 }),
+          ],
+        }),
+        // Dias/Horários
+        new TableRow({ children: [cellBoldNormal('Dias/Horários de Aula: ', data.dias_horarios, { span: 2 })] }),
+        // Professor
+        new TableRow({ children: [cellBoldNormal('Professor(a): ', data.professor, { span: 2 })] }),
+
+        // I - Ementa
+        sectionHeaderRow('I - Ementa'),
+        new TableRow({ children: [cellMultiline(data.ementa, { span: 2 })] }),
+
+        // II - Objetivos
+        sectionHeaderRow('II - Objetivos de Ensino'),
+        new TableRow({ children: [cellFull('1 - Objetivos Gerais', { bold: true, shading: SHADING_SUB, span: 2 })] }),
+        new TableRow({ children: [cellMultiline(data.obj_gerais, { span: 2 })] }),
+        new TableRow({ children: [cellFull('2 - Objetivos Específicos', { bold: true, shading: SHADING_SUB, span: 2 })] }),
+        new TableRow({ children: [cellMultiline(data.obj_especificos, { span: 2 })] }),
+
+        // III - Conteúdos
+        sectionHeaderRow('III - Conteúdos de Ensino'),
+        new TableRow({
+          children: [
+            new TableCell({ borders: BORDER, shading: SHADING_SUB, width: { size: COL1, type: WidthType.DXA },
+              children: [new Paragraph({ spacing: { before: 40, after: 40 }, children: [new TextRun({ text: 'Unidades Temáticas', bold: true, font: 'Arial', size: 20 })] })],
+            }),
+            new TableCell({ borders: BORDER, shading: SHADING_SUB, width: { size: COL2, type: WidthType.DXA },
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 40, after: 40 }, children: [new TextRun({ text: 'C/H', bold: true, font: 'Arial', size: 20 })] })],
+            }),
+          ],
+        }),
+        ...unidadeRows,
+
+        // IV - Metodologia
+        sectionHeaderRow('IV - Metodologia de Ensino'),
+        new TableRow({ children: [cellMultiline(data.metodologia, { span: 2 })] }),
+
+        // V - Recursos
+        sectionHeaderRow('V - Recursos Didáticos'),
+        new TableRow({ children: [cellMultiline(data.recursos || '', { span: 2 })] }),
+
+        // VI - Avaliação
+        sectionHeaderRow('VI - Avaliação da Aprendizagem'),
+        new TableRow({ children: [cellMultiline(data.avaliacao, { span: 2 })] }),
+
+        // VII - Bibliografia
+        sectionHeaderRow('VII - Bibliografia'),
+        new TableRow({ children: [cellFull('1 - Bibliografia Básica', { bold: true, shading: SHADING_SUB, span: 2 })] }),
+        new TableRow({ children: [cellMultiline(data.biblio_basica, { span: 2 })] }),
+        new TableRow({ children: [cellFull('2 - Bibliografia Complementar', { bold: true, shading: SHADING_SUB, span: 2 })] }),
+        new TableRow({ children: [cellMultiline(data.biblio_complementar || '', { span: 2 })] }),
+        new TableRow({ children: [cellFull('3 - Bibliografia Sugerida', { bold: true, shading: SHADING_SUB, span: 2 })] }),
+        new TableRow({ children: [cellMultiline(data.biblio_sugerida || '', { span: 2 })] }),
+
+        // VIII - Cronograma
+        sectionHeaderRow('VIII - Cronograma da Disciplina'),
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              borders: BORDER,
+              children: [
+                new Paragraph({ spacing: { before: 40, after: 20 }, children: [
+                  new TextRun({ text: 'Período de realização: ', bold: true, font: 'Arial', size: 20 }),
+                  new TextRun({ text: data.periodo_realiz, font: 'Arial', size: 20 }),
+                ]}),
+                new Paragraph({ spacing: { before: 0, after: 40 }, children: [
+                  new TextRun({ text: 'Dia e Horário de Execução: ', bold: true, font: 'Arial', size: 20 }),
+                  new TextRun({ text: data.dias_horarios, font: 'Arial', size: 20 }),
+                ]}),
+              ],
+            }),
+          ],
+        }),
+        new TableRow({
+          children: [
+            new TableCell({ borders: BORDER, shading: SHADING_SUB, width: { size: COL1, type: WidthType.DXA },
+              children: [new Paragraph({ spacing: { before: 40, after: 40 }, children: [new TextRun({ text: 'Unidades Temáticas', bold: true, font: 'Arial', size: 20 })] })],
+            }),
+            new TableCell({ borders: BORDER, shading: SHADING_SUB, width: { size: COL2, type: WidthType.DXA },
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 40, after: 40 }, children: [new TextRun({ text: 'Início / Término', bold: true, font: 'Arial', size: 20 })] })],
+            }),
+          ],
+        }),
+        ...cronUnidadeRows,
+        new TableRow({
+          children: [
+            new TableCell({ borders: BORDER, shading: SHADING_SUB, width: { size: COL1, type: WidthType.DXA },
+              children: [new Paragraph({ spacing: { before: 40, after: 40 }, children: [new TextRun({ text: 'Avaliação da Aprendizagem', bold: true, font: 'Arial', size: 20 })] })],
+            }),
+            new TableCell({ borders: BORDER, shading: SHADING_SUB, width: { size: COL2, type: WidthType.DXA },
+              children: [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 40, after: 40 }, children: [new TextRun({ text: 'Data de Realização', bold: true, font: 'Arial', size: 20 })] })],
+            }),
+          ],
+        }),
+        ...avaliacaoRows,
+
+        // Aprovação
+        sectionHeaderRow('Aprovação do Colegiado de Curso'),
+        new TableRow({ children: [cellMultiline(data.aprovacao || '', { span: 2 })] }),
+
+        // Assinatura
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              borders: BORDER,
+              children: [
+                new Paragraph({ spacing: { before: 60, after: 20 }, children: [
+                  new TextRun({ text: `Local e Data: ${data.local_data}`, font: 'Arial', size: 20 }),
+                ]}),
+                new Paragraph({ spacing: { before: 60, after: 20 }, children: [
+                  new TextRun({ text: 'Nome e Assinatura do(a) Professor(a): _______________________________________________', font: 'Arial', size: 20 }),
+                ]}),
+                new Paragraph({ spacing: { before: 20, after: 60 }, children: [new TextRun({ text: '', size: 20 })] }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            size: { width: 12240, height: 15840 }, // A4
+            margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 }, // ~2cm
+          },
+        },
+        children: [table],
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const disc = (data.disciplina || 'Plano').replace(/[^a-zA-Z0-9À-ÿ ]/g,'').trim().replace(/ /g,'_').slice(0,40);
+    a.download = `Plano_de_Curso_${disc}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showStatus('success', '✅ Documento gerado e baixado com sucesso!');
+    setTimeout(() => hideStatus(), 5000);
+  } catch(e) {
+    console.error(e);
+    showStatus('error', '❌ Erro ao gerar: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showStatus(type, msg) {
+  const el = document.getElementById('status-msg');
+  el.className = `status-msg show ${type}`;
+  el.innerHTML = type === 'loading' ? `<div class="spinner"></div> ${msg}` : msg;
+}
+function hideStatus() { document.getElementById('status-msg').className = 'status-msg'; }
+
+function clearForm() {
+  if (!confirm('Limpar todos os campos do formulário?')) return;
+  document.querySelectorAll('input,select,textarea').forEach(el => { el.value = ''; el.classList.remove('auto-filled'); });
+  document.getElementById('unidades-list').innerHTML = '';
+  document.getElementById('avaliacoes-list').innerHTML = '';
+  document.getElementById('autofill-notice').style.display = 'none';
+  unidadeCount = 0; avaliacaoCount = 0;
+  addUnidade(); addUnidade(); addUnidade();
+  DEFAULT_AVALIACOES.forEach(desc => addAvaliacao(desc));
+  updateProgress();
+}
+
+function escHtml(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>
