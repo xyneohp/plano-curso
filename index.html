@@ -5,7 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plano de Curso – UFAC</title>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Merriweather:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<script>
+// Carrega docx.js dinamicamente e garante que o objeto global esteja disponível
+(function() {
+  var urls = [
+    'https://unpkg.com/docx@8.5.0/build/index.umd.js',
+    'https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js'
+  ];
+  var idx = 0;
+  function tryLoad() {
+    if (idx >= urls.length) {
+      console.error('Falha ao carregar biblioteca docx de todos os CDNs');
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = urls[idx++];
+    s.onerror = tryLoad;
+    s.onload = function() {
+      // A lib pode expor como window.docx ou window.Document diretamente
+      if (typeof window.docx === 'undefined' && typeof window.Document !== 'undefined') {
+        // já está no escopo global diretamente
+        window.docx = window;
+      }
+    };
+    document.head.appendChild(s);
+  }
+  tryLoad();
+})();
+</script>
 <style>
   :root {
     --navy: #1a2e4a;
@@ -1001,8 +1029,17 @@ async function generateDocx() {
   showStatus('loading', 'Gerando documento...');
 
   try {
+    // Detecta o objeto correto da biblioteca docx (pode variar por CDN/versão)
+    const docxLib = (typeof docx !== 'undefined' && docx.Document) ? docx
+                  : (typeof window.docx !== 'undefined' && window.docx.Document) ? window.docx
+                  : window; // fallback: classes no escopo global direto
+
+    if (!docxLib.Document || !docxLib.Packer) {
+      throw new Error('Biblioteca docx.js não carregou. Verifique sua conexão e recarregue a página.');
+    }
+
     const { Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle,
-            AlignmentType, ShadingType, VerticalAlign, HeadingLevel, Packer } = docx;
+            AlignmentType, ShadingType, VerticalAlign, HeadingLevel, Packer } = docxLib;
 
     const PT = (n) => n * 20; // twips from pt
     const COL1 = 8400, COL2 = 2400;
