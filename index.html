@@ -726,7 +726,7 @@
       <div class="section-body">
         <div class="field">
           <label>Período de Realização da Disciplina <span class="required">*</span></label>
-          <input type="text" id="periodo_realiz" placeholder="Ex.: 01/03/2026 a 30/06/2026">
+          <input type="text" id="periodo_realiz" placeholder="dd/mm/aaaa a dd/mm/aaaa">
         </div>
         <p style="font-size:12px;color:var(--gray-400);margin-top:-4px">
           ℹ️ As datas de início/término por unidade são preenchidas nas Unidades Temáticas (seção 4)
@@ -838,6 +838,7 @@ function onDisciplinaChange() {
   setAutoField('acex', disc.acex || 0);
   setAutoField('ementa', disc.ementa);
   setAutoField('biblio_basica', disc.biblio);
+  setAutoField('biblio_complementar', disc.biblio_complementar);
   setAutoField('creditos', Math.round(disc.ch / 15));
   document.getElementById('autofill-notice').style.display = 'flex';
   updateProgress();
@@ -849,7 +850,7 @@ function setAutoField(id, value) {
 }
 
 function clearAutoFields() {
-  ['codigo','ch','encontros','acex','creditos','ementa','biblio_basica'].forEach(id => {
+  ['codigo','ch','encontros','acex','creditos','ementa','biblio_basica','biblio_complementar'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.value = ''; el.classList.remove('auto-filled'); }
   });
@@ -1425,6 +1426,61 @@ function clearForm() {
 function escHtml(str) {
   return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── MÁSCARA DE DATA dd/mm/aaaa ──
+function applyDateMask(input) {
+  if (input._dateMaskApplied) return;
+  input._dateMaskApplied = true;
+  input.addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '').slice(0, 8);
+    if (v.length >= 5) v = v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4);
+    else if (v.length >= 3) v = v.slice(0,2) + '/' + v.slice(2);
+    this.value = v;
+  });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && this.value.endsWith('/')) {
+      this.value = this.value.slice(0, -1);
+      e.preventDefault();
+    }
+  });
+}
+
+function applyDateRangeMask(input) {
+  // Máscara para "dd/mm/aaaa a dd/mm/aaaa"
+  if (input._dateMaskApplied) return;
+  input._dateMaskApplied = true;
+  input.addEventListener('input', function() {
+    let raw = this.value.replace(/[^\d]/g, '');
+    let parts = [];
+    if (raw.length > 8) {
+      parts.push(formatDatePart(raw.slice(0, 8)));
+      let rest = raw.slice(8, 16);
+      if (rest.length) parts.push(formatDatePart(rest));
+      this.value = parts.join(' a ');
+    } else {
+      this.value = formatDatePart(raw);
+    }
+  });
+}
+
+function formatDatePart(v) {
+  v = v.slice(0, 8);
+  if (v.length >= 5) return v.slice(0,2) + '/' + v.slice(2,4) + '/' + v.slice(4);
+  if (v.length >= 3) return v.slice(0,2) + '/' + v.slice(2);
+  return v;
+}
+
+function applyDateMasksAll() {
+  const el = document.getElementById('periodo_realiz');
+  if (el) applyDateRangeMask(el);
+  document.querySelectorAll('.u-inicio, .u-termino, .av-data').forEach(el => applyDateMask(el));
+}
+
+const _dateMaskObserver = new MutationObserver(() => applyDateMasksAll());
+document.addEventListener('DOMContentLoaded', () => {
+  _dateMaskObserver.observe(document.body, { childList: true, subtree: true });
+  applyDateMasksAll();
+});
 
 init();
 </script>
