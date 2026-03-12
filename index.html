@@ -839,6 +839,7 @@ function onDisciplinaChange() {
   setAutoField('ementa', disc.ementa);
   setAutoField('biblio_basica', disc.biblio);
   setAutoField('biblio_complementar', disc.biblio_complementar);
+  setAutoField('aprovacao', disc.aprovacao);
   setAutoField('creditos', Math.round(disc.ch / 15));
   document.getElementById('autofill-notice').style.display = 'flex';
   updateProgress();
@@ -850,7 +851,7 @@ function setAutoField(id, value) {
 }
 
 function clearAutoFields() {
-  ['codigo','ch','encontros','acex','creditos','ementa','biblio_basica','biblio_complementar'].forEach(id => {
+  ['codigo','ch','encontros','acex','creditos','ementa','biblio_basica','biblio_complementar','aprovacao'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.value = ''; el.classList.remove('auto-filled'); }
   });
